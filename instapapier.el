@@ -99,18 +99,21 @@
           (message "✗ Authentication failed with status %s" status))
         (buffer-string)))))
 
+;;;###autoload
 (defun instapapier-add-url-at-point()
   "Add the URL at point to Instapaper."
   (interactive)
   (let ((url (thing-at-point 'url)))
     (instapapier-add-url url)))
 
+;;;###autoload
 (defun instapapier-add-elfeed-entry-at-point()
   "Add the elfeed entry at point in show buffer."
   (interactive)
   (let ((url (or (elfeed-entry-link (elfeed-search-selected :ignore-region)))))
     (instapapier-add-url url)))
 
+;;;###autoload
 (defun instapapier-interactively-add-url(url)
   "Add URL interactively."
   (interactive "sInstapaper URL:")

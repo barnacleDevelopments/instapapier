@@ -43,6 +43,44 @@ Send URLs to Instapaper directly from Emacs with ease.
              instapapier-add-elfeed-entry-at-point))
 ```
 
+### Spacemacs
+
+Add to your `dotspacemacs-additional-packages`:
+
+```elisp
+(defun dotspacemacs/layers ()
+  (setq-default
+   dotspacemacs-additional-packages
+   '((instapapier :location (recipe
+                             :fetcher github
+                             :repo "barnacleDevelopments/instapapier")))))
+```
+
+Then add keybindings in `dotspacemacs/user-config`:
+
+```elisp
+(defun dotspacemacs/user-config ()
+  (spacemacs/set-leader-keys
+    "ai a" 'instapapier-add-url-at-point
+    "ai u" 'instapapier-interactively-add-url)
+
+  ;; For elfeed integration
+  (with-eval-after-load 'elfeed
+    (define-key elfeed-search-mode-map (kbd "i") 'instapapier-add-elfeed-entry-at-point)))
+```
+
+### Doom Emacs
+
+Add to your `packages.el`:
+
+```elisp
+;; ~/.doom.d/packages.el
+(package! instapapier
+  :recipe (:host github :repo "barnacleDevelopments/instapapier"))
+```
+
+Run `doom sync` after adding the package, then restart Emacs.
+
 ## Setting Up Instapaper
 
 ### 1. Create an Instapaper Account
