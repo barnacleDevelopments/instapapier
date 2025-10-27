@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="images/instapaper-logo.png" alt="Instapaper Logo" width="100"/>
+</p>
+
 # instapapier.el
 
 Send URLs to Instapaper directly from Emacs with ease.
