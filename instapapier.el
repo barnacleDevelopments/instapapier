@@ -43,6 +43,7 @@
 (setq instapapier-api-url "https://www.instapaper.com/api/add")
 (setq url-debug t)
 
+;;;###autoload
 (defun instapapier-add-url (url)
   "Add URL to Instapaper account."
   (condition-case err
@@ -58,8 +59,10 @@
                                              t)))))
              (api-url (format "https://www.instapaper.com/api/add?url=%s"
                               (url-hexify-string url))))
-        (with-current-buffer 
+        (with-current-buffer
             (url-retrieve-synchronously api-url t)
+          (goto-char (point-min))
+          (re-search-forward "^HTTP/[0-9.]+ \\([0-9]+\\)")
           (let ((status (match-string 1)))
             (cond
              ((string= status "201")
@@ -74,8 +77,11 @@
     (error
      (message "Error adding to Instapaper: %s" err)
      nil)))
+
+;;;###autoload
 (defun instapapier-test-auth ()
   "Test Instapaper authentication."
+  (interactive)
   (require 'url)
   (require 'auth-source)
   (let* ((auth-info (car (auth-source-search :host "www.instapaper.com"
