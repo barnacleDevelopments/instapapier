@@ -45,7 +45,7 @@
 
 ;;;###autoload
 (defun instapapier-add-url (url)
-  "Add URL to Instapaper account."
+  "Add URL to Instapaper account asynchronously."
   (condition-case err
       (let* ((auth-info (car (auth-source-search :host "www.instapaper.com"
                                                  :require '(:user :secret))))
@@ -59,28 +59,33 @@
                                              t)))))
              (api-url (format "https://www.instapaper.com/api/add?url=%s"
                               (url-hexify-string url))))
-        (with-current-buffer
-            (url-retrieve-synchronously api-url t)
-          (goto-char (point-min))
-          (re-search-forward "^HTTP/[0-9.]+ \\([0-9]+\\)")
-          (let ((status (match-string 1)))
-            (cond
-             ((string= status "201")
-              (message "✓ Added to Instapaper: %s" url))
-             ((string= status "400")
-              (message "✗ Bad request - check URL format"))
-             ((string= status "403")
-              (message "✗ Authentication failed"))
-             (t
-              (message "✗ Error %s adding URL" status)))
-            (current-buffer))))
+        (url-retrieve api-url
+                      (lambda (status)
+                        (let ((error-status (plist-get status :error)))
+                          (if error-status
+                              (message "Error adding to Instapaper: %s" error-status)
+                            (goto-char (point-min))
+                            (if (re-search-forward "^HTTP/[0-9.]+ \\([0-9]+\\)" nil t)
+                                (let ((http-status (match-string 1)))
+                                  (cond
+                                   ((string= http-status "201")
+                                    (message "✓ Added to Instapaper: %s" url))
+                                   ((string= http-status "400")
+                                    (message "✗ Bad request - check URL format"))
+                                   ((string= http-status "403")
+                                    (message "✗ Authentication failed"))
+                                   (t
+                                    (message "✗ Error %s adding URL" http-status))))
+                              (message "✗ Could not parse response"))))
+                        (kill-buffer (current-buffer))))
+        (message "Adding to Instapaper..."))
     (error
      (message "Error adding to Instapaper: %s" err)
      nil)))
 
 ;;;###autoload
 (defun instapapier-test-auth ()
-  "Test Instapaper authentication."
+  "Test Instapaper authentication asynchronously."
   (interactive)
   (require 'url)
   (require 'auth-source)
@@ -94,16 +99,20 @@
                                         (base64-encode-string
                                          (concat username ":" password)
                                          t))))))
-    (with-current-buffer 
-        (url-retrieve-synchronously "https://www.instapaper.com/api/authenticate" t)
-      (goto-char (point-min))
-      (re-search-forward "^HTTP/[0-9.]+ \\([0-9]+\\)")
-      (let ((status (match-string 1)))
-        (message "Auth status: %s" status)
-        (if (string= status "200")
-            (message "✓ Authentication successful!")
-          (message "✗ Authentication failed with status %s" status))
-        (buffer-string)))))
+    (url-retrieve "https://www.instapaper.com/api/authenticate"
+                  (lambda (status)
+                    (let ((error-status (plist-get status :error)))
+                      (if error-status
+                          (message "✗ Authentication error: %s" error-status)
+                        (goto-char (point-min))
+                        (if (re-search-forward "^HTTP/[0-9.]+ \\([0-9]+\\)" nil t)
+                            (let ((http-status (match-string 1)))
+                              (if (string= http-status "200")
+                                  (message "✓ Authentication successful!")
+                                (message "✗ Authentication failed with status %s" http-status)))
+                          (message "✗ Could not parse authentication response"))))
+                    (kill-buffer (current-buffer))))
+    (message "Testing authentication...")))
 
 ;;;###autoload
 (defun instapapier-add-url-at-point()
